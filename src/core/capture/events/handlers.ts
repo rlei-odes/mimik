@@ -21,6 +21,12 @@ import { InputSession } from './input-session';
 const DEDUP_MS = 300;
 const DRAG_MIN_PX = 30;
 const INTERCEPT_DELAY_MS = 100;
+/**
+ * How long to wait after `pointerup` before assuming no `click` is coming. A real
+ * click lands in the same task as `mouseup`, so this only needs to clear the turn.
+ * Kept under DEDUP_MS so a late click still dedups against the fallback.
+ */
+const NO_CLICK_MS = 150;
 const PAINT_FRAMES = 3;
 const CAPTURE_BUDGET_MS = 2500;
 const EMBED_TAGS = new Set(['IFRAME', 'EMBED', 'OBJECT']);
@@ -66,6 +72,7 @@ class CaptureController {
   private ring = new HoverRing(DEFAULT_TARGET_COLOR);
   private hovered: HTMLElement | null = null;
   private busy = false;
+  private noClickTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private guideId: string,
@@ -115,6 +122,19 @@ class CaptureController {
     };
   }
 
+  /**
+   * Same payload as `capture`, but read out now rather than when the queue runs it.
+   * The fallback path targets elements that are about to leave the DOM, and a
+   * detached node yields a zero rect and no surrounding context.
+   */
+  private captureSnapshot(action: string, target: HTMLElement, point: { x: number; y: number }) {
+    const elementMeta = { ...extractElementMeta(target, freezeRect(target)), clickPoint: point };
+    const domContext = extractDOMContext(target, action);
+    return async () => {
+      await sendMessage('captureStep', { guideId: this.guideId, action, elementMeta, domContext });
+    };
+  }
+
   private enqueue(task: () => Promise<unknown>) {
     this.busy = true;
     this.ring.hide();
@@ -153,7 +173,37 @@ class CaptureController {
     this.ring.hide();
   }
 
+  /**
+   * Menus that tear the chosen item out of the DOM on `mouseup` leave the browser
+   * with no connected common ancestor, so it never dispatches `click` and the
+   * action goes unrecorded. Snapshot the target while it is still there and
+   * capture it only if no click arrives.
+   */
+  private scheduleNoClickFallback(pe: PointerEvent, raw: Element) {
+    const target = findFocusableAncestor(raw);
+    if (isMimikElement(target) || isTextField(target) || !target.isConnected) return;
+    const task = this.captureSnapshot('click', target, { x: pe.clientX, y: pe.clientY });
+    this.clearNoClickFallback();
+    this.noClickTimer = setTimeout(() => {
+      this.noClickTimer = null;
+      const now = Date.now();
+      if (target === lastClickTarget && now - lastClickTime < DEDUP_MS) return;
+      lastClickTarget = target;
+      lastClickTime = now;
+      this.enqueue(task);
+    }, NO_CLICK_MS);
+  }
+
+  private clearNoClickFallback() {
+    if (this.noClickTimer === null) return;
+    clearTimeout(this.noClickTimer);
+    this.noClickTimer = null;
+  }
+
   private onClick(e: Event) {
+    // A click arrived, so the pointerup fallback must not also fire. Do this before
+    // any early return below — every one of them still means a click was dispatched.
+    this.clearNoClickFallback();
     const me = e as MouseEvent;
     const raw = eventTarget(me);
     if (!raw || !(raw instanceof Element) || isReplayedClick(me) || me.shiftKey) return;
@@ -301,6 +351,9 @@ class CaptureController {
     if (dx >= DRAG_MIN_PX || dy >= DRAG_MIN_PX) {
       const target = findFocusableAncestor(this.dragStartElement);
       if (!isMimikElement(target)) this.enqueue(this.capture('drag', target));
+    } else if (pe.button === 0) {
+      const raw = eventTarget(pe);
+      if (raw) this.scheduleNoClickFallback(pe, raw);
     }
 
     this.dragStartX = this.dragStartY = null;
@@ -314,6 +367,7 @@ class CaptureController {
   }
 
   stop() {
+    this.clearNoClickFallback();
     for (const [event, handler, opts] of this.listeners) {
       window.removeEventListener(event, handler, opts);
     }
