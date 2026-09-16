@@ -1,7 +1,40 @@
-export const FOCUSABLE_SELECTOR =
-  'a[href], button, input, select, textarea, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="checkbox"], [role="radio"], [tabindex], [contenteditable="true"]';
+/** Roles and tags that identify a control on their own. A match here is trusted outright. */
+export const SEMANTIC_SELECTOR = [
+  'a[href]',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'summary',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="tab"]',
+  '[role="menuitem"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  '[role="option"]',
+  '[role="treeitem"]',
+  '[role="gridcell"]',
+  '[role="columnheader"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="switch"]',
+  '[role="combobox"]',
+  '[contenteditable="true"]',
+].join(', ');
+
+/**
+ * Weaker evidence: a bare `tabindex` says "focusable", not "control". Enterprise UIs
+ * hang one on every layout pane, so a match here is only trusted when it is also
+ * control-sized — otherwise a click on a tree row resolves to the whole navigator.
+ */
+export const WEAK_SELECTOR = '[tabindex], [aria-haspopup]';
+
+export const FOCUSABLE_SELECTOR = `${SEMANTIC_SELECTOR}, ${WEAK_SELECTOR}`;
 
 const MAX_ELEMENT_RATIO = 0.8;
+const MAX_WEAK_AREA = 250_000;
+const MAX_WEAK_RATIO = 0.5;
 
 function labelledControl(el: Element): HTMLElement | null {
   const label = el.closest('label');
@@ -13,23 +46,28 @@ function shadowHost(el: Element): Element | null {
   return root instanceof ShadowRoot && root.host instanceof Element ? root.host : null;
 }
 
+/** A weak match is only a control if it is small enough to be one. */
+function isControlSized(el: Element): boolean {
+  const rect = el.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return false;
+  if (rect.width * rect.height > MAX_WEAK_AREA) return false;
+  return rect.width / window.innerWidth <= MAX_WEAK_RATIO && rect.height / window.innerHeight <= MAX_WEAK_RATIO;
+}
+
 export function findFocusableAncestor(el: Element): HTMLElement {
   let scope: Element | null = el;
+  let weak: HTMLElement | null = null;
   while (scope) {
-    let cursor: Element | null = scope;
-    while (cursor) {
-      const match: Element | null = cursor.closest(FOCUSABLE_SELECTOR);
-      if (match instanceof HTMLElement) return match;
-      if (match) {
-        cursor = match.parentElement;
-        continue;
-      }
-      break;
+    for (let cursor: Element | null = scope; cursor; cursor = cursor.parentElement) {
+      if (!(cursor instanceof HTMLElement)) continue;
+      if (cursor.matches(SEMANTIC_SELECTOR)) return cursor;
+      if (!weak && cursor.matches(WEAK_SELECTOR) && isControlSized(cursor)) weak = cursor;
     }
     const control = labelledControl(scope);
     if (control) return control;
     scope = shadowHost(scope);
   }
+  if (weak) return weak;
   if (el instanceof HTMLElement) return el;
   let parent: Element | null = el.parentElement;
   while (parent && !(parent instanceof HTMLElement)) {
@@ -39,10 +77,15 @@ export function findFocusableAncestor(el: Element): HTMLElement {
 }
 
 export function isTextField(el: Element): boolean {
+  // A readonly input is a picker's display slot, not somewhere the user types into.
+  // Treating one as a text field opens an input session that waits for keystrokes
+  // that never arrive, and the step reads as typing rather than a selection.
   if (el instanceof HTMLInputElement) {
+    if (el.readOnly || el.disabled) return false;
     return ['text', 'email', 'password', 'search', 'tel', 'url', 'number'].includes(el.type);
   }
-  return el instanceof HTMLTextAreaElement || (el instanceof HTMLElement && el.isContentEditable);
+  if (el instanceof HTMLTextAreaElement) return !el.readOnly && !el.disabled;
+  return el instanceof HTMLElement && el.isContentEditable;
 }
 
 export function isNavigatingClick(el: HTMLElement): boolean {

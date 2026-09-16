@@ -6,6 +6,7 @@ import {
   getFieldLabel,
   getFieldValue,
   isSensitiveField,
+  isTextField,
   isTooLarge,
 } from '../element-utils';
 
@@ -155,6 +156,122 @@ describe('findFocusableAncestor', () => {
     document.body.appendChild(button);
     expect(findFocusableAncestor(span)).toBe(button);
     button.remove();
+  });
+});
+
+// Structures taken from an enterprise web client that hangs `tabindex` on every
+// layout pane, so the bare-tabindex fallback used to swallow whole panels.
+describe('findFocusableAncestor on tabindex-heavy layouts', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: VIEWPORT_WIDTH });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: VIEWPORT_HEIGHT });
+  });
+
+  function sized<T extends Element>(el: T, width: number, height: number): T {
+    Object.defineProperty(el, 'getBoundingClientRect', {
+      value: () => ({ x: 0, y: 0, top: 0, left: 0, right: width, bottom: height, width, height }),
+    });
+    return el;
+  }
+
+  function build(html: string): HTMLElement {
+    const root = document.createElement('div');
+    root.innerHTML = html;
+    document.body.appendChild(root);
+    return root;
+  }
+
+  it('picks the tree row rather than the scroll container holding the tabindex', () => {
+    const root = build(`
+      <div id="tree" role="tree" tabindex="1048">
+        <ul role="none">
+          <li role="treeitem"><div><span><div class="prog-path">modules/sales</div></span></div></li>
+        </ul>
+      </div>`);
+    sized(root.querySelector('#tree') as Element, 300, 1232);
+    sized(root.querySelector('li') as Element, 281, 40);
+    const leaf = sized(root.querySelector('.prog-path') as HTMLElement, 281, 20);
+
+    expect(findFocusableAncestor(leaf)).toBe(root.querySelector('li'));
+    root.remove();
+  });
+
+  it('keeps a control-sized tabindex wrapper such as a menu bar item', () => {
+    const root = build(`
+      <div class="content">
+        <div class="sc-menuitem" tabindex="-1"><div class="entry">File</div></div>
+      </div>`);
+    const item = sized(root.querySelector('.sc-menuitem') as HTMLElement, 54, 20);
+    const entry = sized(root.querySelector('.entry') as HTMLElement, 46, 15);
+
+    expect(findFocusableAncestor(entry)).toBe(item);
+    root.remove();
+  });
+
+  it('refuses a tabindex container far larger than any control', () => {
+    const root = build(`
+      <div id="pane" tabindex="-1"><div id="inner"><span id="leaf">x</span></div></div>`);
+    sized(root.querySelector('#pane') as Element, 1298, 1297);
+    const leaf = sized(root.querySelector('#leaf') as HTMLElement, 40, 12);
+
+    expect(findFocusableAncestor(leaf)).toBe(leaf);
+    root.remove();
+  });
+
+  it('refuses a zero-width label wrapper that would annotate nothing', () => {
+    const root = build(`<label id="wrap" tabindex="-1"><pre id="text">Article</pre></label>`);
+    sized(root.querySelector('#wrap') as Element, 0, 23);
+    const text = sized(root.querySelector('#text') as HTMLElement, 52, 15);
+
+    expect(findFocusableAncestor(text)).toBe(text);
+    root.remove();
+  });
+
+  it('resolves a checkbox menu entry to the role-bearing element', () => {
+    const root = build(`
+      <div class="sc-menuitem" tabindex="-1">
+        <div role="checkbox" aria-checked="true"><div class="box"></div></div>
+        <div class="entry">Toolbar</div>
+      </div>`);
+    sized(root.querySelector('.sc-menuitem') as Element, 143, 27);
+    const box = sized(root.querySelector('.box') as HTMLElement, 13, 13);
+
+    expect(findFocusableAncestor(box)).toBe(root.querySelector('[role="checkbox"]'));
+    root.remove();
+  });
+});
+
+describe('isTextField', () => {
+  function input(type = 'text'): HTMLInputElement {
+    const el = document.createElement('input');
+    el.type = type;
+    return el;
+  }
+
+  it('reports an ordinary text input as a text field', () => {
+    expect(isTextField(input())).toBe(true);
+  });
+
+  it('does not report a readonly combo box display slot as a text field', () => {
+    const el = input();
+    el.readOnly = true;
+    expect(isTextField(el)).toBe(false);
+  });
+
+  it('does not report a disabled input as a text field', () => {
+    const el = input();
+    el.disabled = true;
+    expect(isTextField(el)).toBe(false);
+  });
+
+  it('does not report a readonly textarea as a text field', () => {
+    const el = document.createElement('textarea');
+    el.readOnly = true;
+    expect(isTextField(el)).toBe(false);
+  });
+
+  it('still reports a writable textarea as a text field', () => {
+    expect(isTextField(document.createElement('textarea'))).toBe(true);
   });
 });
 
