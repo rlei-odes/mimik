@@ -2,6 +2,12 @@ export const STEP_DESCRIPTION_PROMPT = `You are describing steps in a browser wo
 
 {{context}}
 
+Rules:
+- Describe one action, addressed to the reader.
+- Name a control the way it looks on screen. Never use markup or technical words such as div, span, anchor, input, node or element, even if they appear above.
+- Reproduce interface labels exactly as written, keeping their original language, capitalisation and punctuation. Translate the sentence around a label, never the label itself.
+- When no name is given for the control, describe what it does rather than inventing a label.
+
 Examples of good descriptions:
 - "Click the Submit button"
 - "Enter email address in the Email field"
@@ -85,5 +91,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 export function getLanguageSuffix(locale: string): string {
   if (locale.startsWith('en')) return '';
   const lang = LANGUAGE_NAMES[locale.split('-')[0]] || locale;
-  return `\nIMPORTANT: Write the output in ${lang}.`;
+  // The labels come from the page and are already in the user's language. Translating
+  // them would leave the reader hunting for a control that is not on screen.
+  return `\nIMPORTANT: Write the output in ${lang}. Interface labels quoted from the page keep their original wording — translate the sentence around them, never the labels themselves.`;
 }

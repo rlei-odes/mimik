@@ -33,6 +33,66 @@ const INTERACTIVE_SELECTOR =
 const MAX_WALK_UP = 3;
 const MAX_SIBLINGS = 10;
 
+/**
+ * Names a control the way a reader sees it. Apps routinely build buttons and menu
+ * entries out of bare divs, and handing the raw tag to the model produced steps like
+ * 'Click the div "Download"' — a reader has no idea what a div is.
+ */
+const ROLE_KINDS: Record<string, string> = {
+  button: 'button',
+  link: 'link',
+  tab: 'tab',
+  menuitem: 'menu item',
+  menuitemcheckbox: 'menu item',
+  menuitemradio: 'menu item',
+  menu: 'menu',
+  checkbox: 'checkbox',
+  radio: 'radio button',
+  switch: 'toggle',
+  option: 'option',
+  combobox: 'dropdown',
+  listbox: 'list',
+  treeitem: 'tree item',
+  tree: 'tree',
+  gridcell: 'cell',
+  columnheader: 'column header',
+  row: 'row',
+  dialog: 'dialog',
+  searchbox: 'search field',
+  textbox: 'text field',
+  spinbutton: 'number field',
+  slider: 'slider',
+  tabpanel: 'panel',
+};
+
+const TAG_KINDS: Record<string, string> = {
+  button: 'button',
+  a: 'link',
+  select: 'dropdown',
+  textarea: 'text field',
+  summary: 'expander',
+  form: 'form',
+  nav: 'navigation',
+  dialog: 'dialog',
+  table: 'table',
+  li: 'list item',
+};
+
+export function controlKind(tag: string, role: string | null): string | null {
+  if (role && ROLE_KINDS[role]) return ROLE_KINDS[role];
+  if (TAG_KINDS[tag]) return TAG_KINDS[tag];
+  if (tag === 'input') return 'field';
+  // A div or span says nothing a reader would recognise, so say nothing.
+  return role ?? null;
+}
+
+function describeControl(tag: string, role: string | null, name: string | null): string {
+  const kind = controlKind(tag, role);
+  const label = name ? `"${name}"` : '';
+  if (kind && label) return `${kind} ${label}`;
+  return kind || label || 'control';
+}
+
 function textOf(el: Element | null): string | null {
   return el?.textContent?.trim() || null;
 }
@@ -176,27 +236,22 @@ export function serializeDOMContext(ctx: DOMContext): string {
   lines.push(`Page: "${ctx.page.title}" ${ctx.page.path}`);
 
   if (ctx.container) {
-    const role = ctx.container.role ? ` [role=${ctx.container.role}]` : '';
-    const label = ctx.container.label ? ` "${ctx.container.label}"` : '';
-    lines.push(`Container: ${ctx.container.tag}${role}${label}`);
+    const container = describeControl(ctx.container.tag, ctx.container.role, ctx.container.label);
+    if (container !== 'control') lines.push(`Container: ${container}`);
   }
 
   lines.push(`Heading: ${ctx.heading ? `"${ctx.heading}"` : 'none'}`);
 
   if (ctx.siblings.length > 0) {
     lines.push(
-      `Siblings: ${ctx.siblings
-        .map((s) => {
-          const name = s.name ? ` "${s.name}"` : '';
-          const val = s.value ? ` [${s.value}]` : '';
-          return `${s.tag}${name}${val}`;
-        })
+      `Nearby: ${ctx.siblings
+        .map((s) => `${describeControl(s.tag, s.role, s.name)}${s.value ? ` [${s.value}]` : ''}`)
         .join(', ')}`,
     );
   }
 
-  const { tag, name, value, action } = ctx.target;
-  lines.push(`→ Target: ${tag}${name ? ` "${name}"` : ''}${value ? ` [${value}]` : ''} (${action})`);
+  const { tag, role, name, value, action } = ctx.target;
+  lines.push(`→ Target: ${describeControl(tag, role, name)}${value ? ` [${value}]` : ''} (${action})`);
 
   return lines.join('\n');
 }
