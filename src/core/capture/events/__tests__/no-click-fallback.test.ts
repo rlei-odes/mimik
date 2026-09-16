@@ -150,6 +150,42 @@ describe('pointerup fallback for interactions that never fire a click', () => {
     expect(steps()).toHaveLength(0);
   });
 
+  it('claims the pointerdown screenshot when the item sat in a just-opened menu', async () => {
+    const popup = place('div');
+    const item = document.createElement('div');
+    item.tabIndex = -1;
+    Object.defineProperty(item, 'getBoundingClientRect', {
+      value: () => ({ x: 4, y: 6, top: 6, left: 4, right: 124, bottom: 46, width: 120, height: 40 }),
+    });
+    popup.appendChild(item);
+    document.body.appendChild(popup);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    pointer(item, 'pointerdown');
+    pointer(item, 'pointerup');
+    popup.remove();
+    await pastFallback();
+
+    expect(vi.mocked(sendMessage).mock.calls.some((c) => c[0] === 'prefetchScreenshot')).toBe(true);
+    expect(steps()[0][1]).toMatchObject({
+      prefetch: expect.objectContaining({ id: expect.any(String), detachedAt: expect.any(Number) }),
+    });
+  });
+
+  it('sends no claim for an ordinary control that was already on the page', async () => {
+    const item = place('div');
+    item.tabIndex = -1;
+    item.addEventListener('mouseup', () => item.remove());
+
+    pointer(item, 'pointerdown');
+    pointer(item, 'pointerup');
+    item.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    await pastFallback();
+
+    expect(vi.mocked(sendMessage).mock.calls.some((c) => c[0] === 'prefetchScreenshot')).toBe(false);
+    expect(steps()[0][1]).toMatchObject({ prefetch: undefined });
+  });
+
   it('records nothing once capture has stopped', async () => {
     const item = place('div');
     item.tabIndex = -1;

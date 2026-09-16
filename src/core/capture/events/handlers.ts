@@ -3,7 +3,7 @@ import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
 import { HoverRing } from '@/lib/hover-ring';
 import { logger } from '@/lib/logger';
-import { sendMessage } from '@/lib/messaging';
+import { type PrefetchClaim, sendMessage } from '@/lib/messaging';
 import { extractDOMContext } from '../dom/context';
 import { extractElementMeta, freezeRect } from '../dom/element-meta';
 import {
@@ -15,6 +15,7 @@ import {
   isTextField,
   isTooLarge,
 } from '../dom/element-utils';
+import { TransientOverlays } from '../dom/transient';
 import { isReplayedClick, replayClick, replayInit, shouldInterceptClick } from './click-intercept';
 import { InputSession } from './input-session';
 
@@ -73,6 +74,8 @@ class CaptureController {
   private hovered: HTMLElement | null = null;
   private busy = false;
   private noClickTimer: ReturnType<typeof setTimeout> | null = null;
+  private overlays = new TransientOverlays();
+  private prefetchId: string | null = null;
 
   constructor(
     private guideId: string,
@@ -97,6 +100,7 @@ class CaptureController {
         ['mouseover', this.onMouseOver.bind(this), PASSIVE_CAPTURE],
         ['mouseout', this.onMouseOut.bind(this), PASSIVE_CAPTURE],
       );
+      this.overlays.start();
       localStorage
         .get(['targetColor'])
         .then(({ targetColor }) => {
@@ -127,12 +131,44 @@ class CaptureController {
    * The fallback path targets elements that are about to leave the DOM, and a
    * detached node yields a zero rect and no surrounding context.
    */
-  private captureSnapshot(action: string, target: HTMLElement, point: { x: number; y: number }) {
+  private captureSnapshot(
+    action: string,
+    target: HTMLElement,
+    point: { x: number; y: number },
+    prefetch?: () => PrefetchClaim | undefined,
+  ) {
     const elementMeta = { ...extractElementMeta(target, freezeRect(target)), clickPoint: point };
     const domContext = extractDOMContext(target, action);
     return async () => {
-      await sendMessage('captureStep', { guideId: this.guideId, action, elementMeta, domContext });
+      await sendMessage('captureStep', {
+        guideId: this.guideId,
+        action,
+        elementMeta,
+        domContext,
+        prefetch: prefetch?.(),
+      });
     };
+  }
+
+  /**
+   * Ask the background for a frame now, while the overlay under the pointer is still
+   * up. Fire-and-forget: the step redeems it later, and only if it can prove the
+   * frame predates the overlay closing.
+   */
+  private armPrefetch(raw: Element) {
+    this.prefetchId = null;
+    const overlay = this.overlays.find(raw);
+    if (!overlay) return;
+    const prefetchId = crypto.randomUUID();
+    this.prefetchId = prefetchId;
+    this.overlays.watch(overlay);
+    void sendMessage('prefetchScreenshot', { prefetchId }).catch(() => {});
+  }
+
+  private claimPrefetch(prefetchId: string | null): PrefetchClaim | undefined {
+    if (!prefetchId) return undefined;
+    const detachedAt = this.overlays.detachTime;
+    return detachedAt === null ? undefined : { id: prefetchId, detachedAt };
   }
 
   private enqueue(task: () => Promise<unknown>) {
@@ -182,7 +218,10 @@ class CaptureController {
   private scheduleNoClickFallback(pe: PointerEvent, raw: Element) {
     const target = findFocusableAncestor(raw);
     if (isMimikElement(target) || isTextField(target) || !target.isConnected) return;
-    const task = this.captureSnapshot('click', target, { x: pe.clientX, y: pe.clientY });
+    const prefetchId = this.prefetchId;
+    const task = this.captureSnapshot('click', target, { x: pe.clientX, y: pe.clientY }, () =>
+      this.claimPrefetch(prefetchId),
+    );
     this.clearNoClickFallback();
     this.noClickTimer = setTimeout(() => {
       this.noClickTimer = null;
@@ -335,6 +374,7 @@ class CaptureController {
     this.dragStartX = pe.pageX;
     this.dragStartY = pe.pageY;
     this.dragStartElement = eventTarget(pe);
+    if (pe.button === 0 && this.dragStartElement) this.armPrefetch(this.dragStartElement);
   }
 
   private onPointerUp(e: Event) {
@@ -368,6 +408,7 @@ class CaptureController {
 
   stop() {
     this.clearNoClickFallback();
+    this.overlays.stop();
     for (const [event, handler, opts] of this.listeners) {
       window.removeEventListener(event, handler, opts);
     }

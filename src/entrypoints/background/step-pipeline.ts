@@ -19,12 +19,13 @@ import { getActor } from './actor';
 import { generateAiDescription } from './ai-description';
 import { deferDescription, shouldQueueAiDescription } from './deferred-descriptions';
 import { queueDescription } from './description-queue';
+import { redeemPrefetch } from './screenshot-prefetch';
 import { flushNarrationForStep, getVoiceUpdate } from './voice';
 
-async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string | undefined> {
+async function takeScreenshot(stepId: string, meta: ElementMeta, prefetched?: string): Promise<string | undefined> {
   try {
     const { targetColor } = await localStorage.get(['targetColor']);
-    const dataUrl = await captureVisibleTab('jpeg', 90);
+    const dataUrl = prefetched ?? (await captureVisibleTab('jpeg', 90));
     const blob = await fetch(dataUrl).then((r) => r.blob());
     const img = await createImageBitmap(blob);
     const screenshot: Screenshot = {
@@ -77,7 +78,8 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
   const guideId = snap.context.currentGuideId!;
   const stepId = crypto.randomUUID();
 
-  const screenshotId = await takeScreenshot(stepId, data.elementMeta);
+  const prefetched = data.prefetch ? redeemPrefetch(data.prefetch.id, data.prefetch.detachedAt) : undefined;
+  const screenshotId = await takeScreenshot(stepId, data.elementMeta, prefetched);
 
   const narrationCapturing = getVoiceUpdate().phase === 'recording';
   const hasAiKey = !!resolveAiKey(await localStorage.get([...AI_KEY_SETTINGS])).apiKey;

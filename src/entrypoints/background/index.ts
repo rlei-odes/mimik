@@ -27,6 +27,7 @@ import { recordUpdate } from '@/lib/update-notice';
 import { getActor, getStateUpdate, initActor, initActorFallback, waitUntilReady } from './actor';
 import { generateDescriptionOnDemand, generateGuideMetaOnStop, settlePendingDescriptions } from './guide-meta';
 import { registerNavigationListeners } from './navigation';
+import { prefetchScreenshot } from './screenshot-prefetch';
 import { handleCaptureStep, handleFinalizeInputStep, handleUpdateInputStep } from './step-pipeline';
 import { broadcastStartCapture, broadcastStopCapture, showNotificationOnTab } from './tab-manager';
 import {
@@ -192,6 +193,10 @@ export default defineBackground(() => {
     await waitUntilReady();
     return handleCaptureStep(data);
   });
+
+  // Deliberately not behind waitUntilReady: a prefetch is only useful while the
+  // overlay is still up, so waiting would guarantee the frame arrives too late.
+  onMessage('prefetchScreenshot', async ({ data }) => ({ held: await prefetchScreenshot(data.prefetchId) }));
 
   onMessage('updateInputStep', async ({ data }) => {
     await waitUntilReady();

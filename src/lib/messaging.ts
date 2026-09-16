@@ -25,11 +25,30 @@ export interface StopRecordingResponse {
   inserted?: boolean;
 }
 
+/**
+ * Claim on a screenshot taken at pointerdown, while a transient overlay was still
+ * on screen. `detachedAt` is when the overlay left the DOM: the background uses the
+ * held frame only if it finished capturing before that, and otherwise shoots fresh.
+ */
+export interface PrefetchClaim {
+  id: string;
+  detachedAt: number;
+}
+
 export interface CaptureStepData {
   guideId: string;
   action: string;
   elementMeta: ElementMeta;
   domContext?: DOMContext;
+  prefetch?: PrefetchClaim;
+}
+
+export interface PrefetchScreenshotData {
+  prefetchId: string;
+}
+
+export interface PrefetchScreenshotResponse {
+  held: boolean;
 }
 
 export type CaptureStepResponse = { stepId: string } | { ignored: true } | { error: string };
@@ -138,6 +157,7 @@ interface MimikProtocol {
   startRecording(data: StartRecordingData): StartRecordingResponse;
   stopRecording(): StopRecordingResponse;
   captureStep(data: CaptureStepData): CaptureStepResponse;
+  prefetchScreenshot(data: PrefetchScreenshotData): PrefetchScreenshotResponse;
   updateInputStep(data: UpdateInputStepData): UpdateInputStepResponse;
   finalizeInputStep(data: FinalizeInputStepData): FinalizeInputStepResponse;
   startGuideMe(data: StartGuideMeData): StartGuideMeResponse;
