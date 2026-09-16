@@ -3,6 +3,7 @@ import type { ElementMeta } from '@/core/guides/types';
 
 export function buildFallbackDescription(action: string, meta: ElementMeta): string {
   const target =
+    meta.fieldLabel ||
     meta.ariaLabel ||
     meta.placeholder ||
     meta.textContent?.slice(0, 80) ||
@@ -27,6 +28,9 @@ export function buildFallbackDescription(action: string, meta: ElementMeta): str
       if (meta.href) return i18n.t('steps.clickLink', [target]);
       return i18n.t('steps.click', [target]);
     case 'input':
+      // Naming the field beats naming its input type: "In Feld text eingeben input"
+      // told the reader nothing, because the tag was standing in for a missing label.
+      if (meta.fieldLabel) return i18n.t('steps.typeInto', [meta.fieldLabel]);
       if (meta.inputType) return i18n.t('steps.typeIntoField', [meta.inputType, target]);
       return i18n.t('steps.typeInto', [target]);
     case 'copy':

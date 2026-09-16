@@ -101,6 +101,8 @@ export interface ElementMeta {
   role: string | null;
   href: string | null;
   inputType: string | null;
+  /** Readable name of a form control, resolved in the page where the label lives. */
+  fieldLabel?: string | null;
   dataTestId: string | null;
   rect: { x: number; y: number; width: number; height: number };
   devicePixelRatio: number;

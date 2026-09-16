@@ -1,4 +1,6 @@
-export const STEP_DESCRIPTION_PROMPT = `You are describing steps in a browser workflow guide. Given the following context about a user action on a web page, write a single concise sentence describing this step.
+export const STEP_DESCRIPTION_PROMPT = `You are writing one caption for an illustrated software guide. Each caption sits underneath a screenshot of the application, with the control the user acted on outlined in the image, and the reader has that same application open in front of them while following along.
+
+The context below was read from the page at the moment of the action. It lists the control that was used, what surrounds it, and where in the application it sits:
 
 {{context}}
 
@@ -6,15 +8,48 @@ Rules:
 - Describe one action, addressed to the reader.
 - Name a control the way it looks on screen. Never use markup or technical words such as div, span, anchor, input, node or element, even if they appear above.
 - Reproduce interface labels exactly as written, keeping their original language, capitalisation and punctuation. Translate the sentence around a label, never the label itself.
+- Labels in business software are often product-specific terms. Treat a quoted label as a literal string printed on screen, never as a word to interpret, expand or correct.
 - When no name is given for the control, describe what it does rather than inventing a label.
+- The reader can see the screenshot, so do not describe the layout, colours or position of anything.
 
-Examples of good descriptions:
-- "Click the Submit button"
-- "Enter email address in the Email field"
-- "Select 'Admin' from the Role dropdown"
-- "Navigate to the Settings page"
+Examples of good captions:
+{{examples}}
 
-Write only the description, no preamble.`;
+Write only the caption, no preamble.`;
+
+/**
+ * Few-shot examples carry more style than any instruction does, so a reader writing
+ * in German gets German ones. Anything without its own set falls back to English,
+ * which still beats no examples at all.
+ */
+const STEP_EXAMPLES: Record<string, string[]> = {
+  en: [
+    'Click the Submit button',
+    'Enter the email address in the Email field',
+    "Select 'Admin' from the Role dropdown",
+    'Choose Movements from the File menu',
+    'Open the Settings page',
+  ],
+  de: [
+    'Klicken Sie auf die Schaltfläche Senden',
+    'Geben Sie die E-Mail-Adresse in das Feld E-Mail ein',
+    'Wählen Sie in der Auswahlliste Rolle den Eintrag Admin aus',
+    'Wählen Sie im Menü Datei den Eintrag Bewegungen',
+    'Öffnen Sie die Seite Einstellungen',
+  ],
+};
+
+export function getStepExamples(locale: string): string {
+  const examples = STEP_EXAMPLES[locale.split('-')[0]] ?? STEP_EXAMPLES.en;
+  return examples.map((line) => `- "${line}"`).join('\n');
+}
+
+export function buildStepPrompt(context: string, locale: string): string {
+  return (
+    STEP_DESCRIPTION_PROMPT.replace('{{context}}', context).replace('{{examples}}', getStepExamples(locale)) +
+    getLanguageSuffix(locale)
+  );
+}
 
 export const GUIDE_META_PROMPT = `These are the steps of a browser workflow, with the page URL and description for each step:
 
@@ -77,6 +112,9 @@ export const AI_LANGUAGES = [
 ] as const;
 
 export type AILanguageCode = (typeof AI_LANGUAGES)[number]['code'];
+
+/** This fork is used internally, where guides are written in German. */
+export const DEFAULT_AI_LANGUAGE: AILanguageCode = 'de';
 
 const LANGUAGE_NAMES: Record<string, string> = {
   es: 'Spanish',

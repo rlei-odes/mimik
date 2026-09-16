@@ -28,7 +28,7 @@ import {
   isCustomModel,
   providerOrDefault,
 } from '@/core/capture/ai/models';
-import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
+import { AI_LANGUAGES, type AILanguageCode, DEFAULT_AI_LANGUAGE } from '@/core/capture/ai/prompts';
 import { resolveVoiceApiKey } from '@/core/capture/voice/api-key';
 import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import { type BrandLogo, defaultFooterLine, makeBrandLogo } from '@/core/export/branding';
@@ -72,14 +72,14 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const savedSnapshot = useRef<SettingsSnapshot | null>(null);
   const pending = useRef<SettingsSnapshot>({});
   const saveTimer = useRef<number | undefined>(undefined);
-  const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
+  const [aiLanguage, setAiLanguage] = useState<AILanguageCode>(DEFAULT_AI_LANGUAGE);
   const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('openai');
   const [voiceApiKey, setVoiceApiKey] = useState('');
   const [voiceMicrophoneId, setVoiceMicrophoneId] = useState('');
   const [targetColor, setTargetColor] = useState<string>(DEFAULT_TARGET_COLOR);
   const [brandLogo, setBrandLogo] = useState<BrandLogo | null>(null);
   const [brandFooter, setBrandFooter] = useState('');
-  const [brandAttribution, setBrandAttribution] = useState(true);
+  const [brandAttribution, setBrandAttribution] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
@@ -127,7 +127,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
         if (result.targetColor) setTargetColor(result.targetColor as string);
         if (result.brandLogo) setBrandLogo(result.brandLogo as BrandLogo);
         setBrandFooter(typeof result.brandFooter === 'string' ? result.brandFooter : defaultFooterLine());
-        if (result.brandAttribution === false) setBrandAttribution(false);
+        if (result.brandAttribution === true) setBrandAttribution(true);
         setLoaded(true);
       });
   }, []);

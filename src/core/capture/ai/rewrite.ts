@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 import type { RewriteSelectionResponse } from '@/lib/messaging';
 import { resolveAiKey } from './keys';
 import { AI_PROVIDERS } from './models';
-import { getLanguageSuffix, REWRITE_PROMPT } from './prompts';
+import { DEFAULT_AI_LANGUAGE, getLanguageSuffix, REWRITE_PROMPT } from './prompts';
 import { createModel } from './provider';
 
 const WRAPPED_IN_QUOTES = /^["“'](.*)["”']$/s;
@@ -42,7 +42,7 @@ export async function rewriteSelection(text: string, instruction: string): Promi
         apiKey,
         settings.aiBaseUrl as string | undefined,
       ),
-      prompt: buildRewritePrompt(text, instruction, (settings.aiLanguage as string) || 'en'),
+      prompt: buildRewritePrompt(text, instruction, (settings.aiLanguage as string) || DEFAULT_AI_LANGUAGE),
       maxOutputTokens: 400,
     });
 

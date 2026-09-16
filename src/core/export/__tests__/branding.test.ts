@@ -21,7 +21,7 @@ describe('loadBranding', () => {
     expect(brand).toEqual({
       logo: null,
       footer: defaultFooterLine(),
-      attribution: true,
+      attribution: false,
       accent: DEFAULT_TARGET_COLOR,
       custom: false,
     });
@@ -52,13 +52,13 @@ describe('loadBranding', () => {
     expect(brand.custom).toBe(false);
   });
 
-  it('trims the footer line and keeps attribution on unless explicitly disabled', async () => {
+  it('trims the footer line and leaves attribution off unless explicitly enabled', async () => {
     await fakeBrowser.storage.local.set({ brandFooter: '  Confidential  ' });
     expect((await loadBranding()).footer).toBe('Confidential');
-    expect((await loadBranding()).attribution).toBe(true);
-
-    await fakeBrowser.storage.local.set({ brandAttribution: false });
     expect((await loadBranding()).attribution).toBe(false);
+
+    await fakeBrowser.storage.local.set({ brandAttribution: true });
+    expect((await loadBranding()).attribution).toBe(true);
   });
 
   it('rejects a malformed stored logo instead of rendering a broken image', async () => {
@@ -73,17 +73,17 @@ describe('loadBranding', () => {
     }
   });
 
-  it('accepts a well-formed stored logo and does not reach for the Mimik fallback', async () => {
+  it('accepts a well-formed stored logo and does not reach for the packaged one', async () => {
     const brandLogo = { dataUrl: 'data:image/png;base64,AAA', width: 320, height: 80 };
     await fakeBrowser.storage.local.set({ brandLogo });
     expect((await loadBranding()).logo).toEqual(brandLogo);
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('reaches for the packaged Mimik fallback when no logo is stored', async () => {
+  it('falls back to the packaged company logo when none is stored', async () => {
     await loadBranding();
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain('mimik-mark.png');
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain('brand-logo.jpg');
   });
 });
 

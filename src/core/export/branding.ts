@@ -4,7 +4,8 @@ import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
 import { getExtensionURL, localStorage } from '@/lib/browser-api';
 
 export const BRAND_LOGO_MAX_WIDTH = 320;
-const FALLBACK_LOGO_PATH = '/mimik-mark.png';
+/** Company logo, so internal guides are branded without every author uploading one. */
+const FALLBACK_LOGO_PATH = '/brand-logo.jpg';
 
 export const defaultFooterLine = () => `© ${new Date().getFullYear()}`;
 
@@ -50,7 +51,8 @@ export async function loadBranding(): Promise<Branding> {
   return {
     logo: parseLogo(stored.brandLogo) ?? (await loadFallbackLogo()),
     footer: typeof stored.brandFooter === 'string' ? stored.brandFooter.trim() : defaultFooterLine(),
-    attribution: stored.brandAttribution !== false,
+    // Off unless switched on: these guides carry company branding, not ours.
+    attribution: stored.brandAttribution === true,
     accent,
     custom: accent !== DEFAULT_TARGET_COLOR,
   };

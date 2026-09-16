@@ -146,7 +146,12 @@ function slottedLabel(el: Element): string | null {
   );
 }
 
-export function getFieldLabel(el: HTMLElement): string {
+/**
+ * The readable name of a field, or null when the page gives it none. Kept separate
+ * from `getFieldLabel` so callers that can cope without one — a step description
+ * has other things to fall back on — are not handed the generic placeholder.
+ */
+export function findFieldLabel(el: HTMLElement): string | null {
   const ariaLabel = el.getAttribute('aria-label');
   if (ariaLabel) return ariaLabel;
 
@@ -182,5 +187,9 @@ export function getFieldLabel(el: HTMLElement): string {
   const name = el.getAttribute('name');
   if (name && !/[-_]test|[-_]id|[-_]key/i.test(name)) return name;
 
-  return 'text field';
+  return null;
+}
+
+export function getFieldLabel(el: HTMLElement): string {
+  return findFieldLabel(el) ?? 'text field';
 }

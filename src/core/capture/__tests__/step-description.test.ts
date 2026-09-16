@@ -21,6 +21,29 @@ function makeMeta(overrides: Partial<ElementMeta> = {}): ElementMeta {
   };
 }
 
+describe('buildFallbackDescription for fields the page does not name', () => {
+  it('names the field rather than its input type', () => {
+    const result = buildFallbackDescription(
+      'input',
+      makeMeta({ tag: 'input', inputType: 'text', role: 'input', fieldLabel: 'Wiedervorlage' }),
+    );
+    expect(result).toBe('steps.typeInto[Wiedervorlage]');
+  });
+
+  it('prefers the resolved label over every other name on the element', () => {
+    const result = buildFallbackDescription(
+      'click',
+      makeMeta({ tag: 'input', name: 'PFillIn-44_inner', fieldLabel: 'Suchbegriff' }),
+    );
+    expect(result).toBe('steps.click[Suchbegriff]');
+  });
+
+  it('still falls back to the input type when the page names the field nowhere', () => {
+    const result = buildFallbackDescription('input', makeMeta({ tag: 'input', inputType: 'text', role: 'input' }));
+    expect(result).toBe('steps.typeIntoField[text,input]');
+  });
+});
+
 describe('buildFallbackDescription', () => {
   it('generates click description using textContent', () => {
     const result = buildFallbackDescription('click', makeMeta({ textContent: 'Submit' }));

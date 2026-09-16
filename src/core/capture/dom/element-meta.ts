@@ -1,5 +1,15 @@
 import { getCssSelector } from 'css-selector-generator';
 import type { ElementMeta } from '@/core/guides/types';
+import { findFieldLabel } from './element-utils';
+
+function isFormControl(el: HTMLElement): boolean {
+  return (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    el instanceof HTMLSelectElement ||
+    el.isContentEditable
+  );
+}
 
 function getCleanText(el: HTMLElement): string | null {
   const clone = el.cloneNode(true) as HTMLElement;
@@ -54,6 +64,9 @@ export function extractElementMeta(el: HTMLElement, atEvent?: FrozenRect): Eleme
     role: el.getAttribute('role') || (el.tagName?.toLowerCase() ?? null),
     href: el instanceof HTMLAnchorElement ? el.href : null,
     inputType: el instanceof HTMLInputElement ? el.type : null,
+    // Resolved here because the label is usually a separate element, and the
+    // background only ever sees this object.
+    fieldLabel: isFormControl(el) ? findFieldLabel(el) : null,
     dataTestId: el.getAttribute('data-testid') || el.getAttribute('data-test-id') || el.getAttribute('data-qa') || null,
     rect,
     devicePixelRatio: window.devicePixelRatio,

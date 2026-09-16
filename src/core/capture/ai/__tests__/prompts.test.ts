@@ -1,5 +1,56 @@
 import { describe, expect, it } from 'vitest';
-import { AI_LANGUAGES, GUIDE_META_PROMPT, getLanguageSuffix } from '../prompts';
+import { AI_LANGUAGES, buildStepPrompt, GUIDE_META_PROMPT, getLanguageSuffix, getStepExamples } from '../prompts';
+
+describe('step caption examples', () => {
+  it('gives German examples when the guide language is German', () => {
+    expect(getStepExamples('de')).toContain('Klicken Sie auf die Schaltfläche Senden');
+  });
+
+  it('gives German examples for a regional German locale too', () => {
+    expect(getStepExamples('de-AT')).toContain('Klicken Sie');
+  });
+
+  it('falls back to English for a language with no examples of its own', () => {
+    expect(getStepExamples('sv')).toContain('Click the Submit button');
+  });
+
+  it('shows how a menu selection should read, which bare tags never conveyed', () => {
+    expect(getStepExamples('de')).toContain('Menü');
+    expect(getStepExamples('en')).toContain('menu');
+  });
+});
+
+describe('buildStepPrompt', () => {
+  it('places the page context into the prompt', () => {
+    expect(buildStepPrompt('→ Target: "Herunterladen" (click)', 'de')).toContain('→ Target: "Herunterladen" (click)');
+  });
+
+  it('leaves no placeholder unfilled', () => {
+    const prompt = buildStepPrompt('→ Target: "X" (click)', 'de');
+    expect(prompt).not.toContain('{{context}}');
+    expect(prompt).not.toContain('{{examples}}');
+  });
+
+  it('pairs German examples with the German output instruction', () => {
+    const prompt = buildStepPrompt('→ Target: "X" (click)', 'de');
+    expect(prompt).toContain('Klicken Sie auf die Schaltfläche Senden');
+    expect(prompt).toContain('Write the output in German');
+  });
+
+  it('carries no language instruction for English, which is the default', () => {
+    expect(buildStepPrompt('→ Target: "X" (click)', 'en')).not.toContain('IMPORTANT');
+  });
+
+  it('tells the model the caption accompanies a screenshot', () => {
+    const prompt = buildStepPrompt('→ Target: "X" (click)', 'en');
+    expect(prompt).toContain('screenshot');
+    expect(prompt).toContain('outlined');
+  });
+
+  it('keeps the rule that labels are never translated', () => {
+    expect(buildStepPrompt('→ Target: "X" (click)', 'de')).toContain('never the label itself');
+  });
+});
 
 describe('GUIDE_META_PROMPT', () => {
   it('has a steps placeholder', () => {
