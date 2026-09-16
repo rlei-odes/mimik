@@ -35,6 +35,7 @@ afterEach(() => {
 describe('spotting a transient overlay', () => {
   async function openDropdown(width = 255, height = 683) {
     const popup = sized(document.createElement('div'), width, height);
+    popup.style.position = 'absolute';
     const item = sized(document.createElement('div'), 247, 27);
     const label = sized(document.createElement('div'), 192, 15);
     item.appendChild(label);
@@ -73,6 +74,16 @@ describe('spotting a transient overlay', () => {
     await settle();
 
     expect(overlays.find(row)).toBeNull();
+  });
+
+  it('ignores a freshly rendered control that sits in the normal flow', async () => {
+    // An app re-renders ordinary controls constantly. Only something that left the
+    // flow to float over the page is an overlay.
+    const button = sized(document.createElement('div'), 98, 38);
+    document.body.appendChild(button);
+    await settle();
+
+    expect(overlays.find(button)).toBeNull();
   });
 
   it('ignores a zero-sized wrapper', async () => {

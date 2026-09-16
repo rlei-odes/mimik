@@ -186,6 +186,11 @@ class CaptureController {
 
   private hoverTarget(raw: EventTarget | null): HTMLElement | null {
     if (!(raw instanceof Element) || isMimikElement(raw)) return null;
+    // Never ring inside a transient overlay. Those steps are shot at pointerdown,
+    // which is far too soon for a `display:none` to have reached the compositor, so
+    // the ring would be baked into the screenshot — and its 0.15s move transition
+    // can leave it stretched between two positions while it happens.
+    if (this.overlays.find(raw)) return null;
     const target = findFocusableAncestor(raw);
     if (target === document.body || target === document.documentElement) return null;
     if (EMBED_TAGS.has(target.tagName) || isTooLarge(target)) return null;

@@ -99,6 +99,52 @@ describe('hover ring targeting', () => {
     expect(showSpy).toHaveBeenCalledWith(button);
   });
 
+  it('does not ring an item inside a just-opened menu, which would bake into its screenshot', async () => {
+    const popup = place('div', 255, 400);
+    popup.style.position = 'absolute';
+    const item = document.createElement('div');
+    item.tabIndex = -1;
+    Object.defineProperty(item, 'getBoundingClientRect', {
+      value: () => ({ x: 0, y: 0, top: 0, left: 0, right: 247, bottom: 27, width: 247, height: 27 }),
+    });
+    popup.appendChild(item);
+    document.body.appendChild(popup);
+    await settle(2);
+
+    hover(item);
+    expect(showSpy).not.toHaveBeenCalled();
+  });
+
+  it('takes the ring down when moving off a control into a just-opened menu', async () => {
+    const button = place('button');
+    const popup = place('div', 255, 400);
+    popup.style.position = 'absolute';
+    const item = document.createElement('div');
+    item.tabIndex = -1;
+    Object.defineProperty(item, 'getBoundingClientRect', {
+      value: () => ({ x: 0, y: 0, top: 0, left: 0, right: 247, bottom: 27, width: 247, height: 27 }),
+    });
+    popup.appendChild(item);
+    document.body.appendChild(popup);
+    await settle(2);
+
+    hover(button);
+    expect(showSpy).toHaveBeenCalledWith(button);
+
+    hover(item);
+
+    expect(hideSpy).toHaveBeenCalled();
+    expect(showSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('still rings an ordinary control that was already on the page', () => {
+    const button = place('button');
+
+    hover(button);
+
+    expect(showSpy).toHaveBeenCalledWith(button);
+  });
+
   it('hides the ring when hovering into an embedded frame', () => {
     const button = place('button');
     const frame = place('iframe', 400, 300);

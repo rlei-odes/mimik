@@ -152,6 +152,7 @@ describe('pointerup fallback for interactions that never fire a click', () => {
 
   it('claims the pointerdown screenshot when the item sat in a just-opened menu', async () => {
     const popup = place('div');
+    popup.style.position = 'absolute';
     const item = document.createElement('div');
     item.tabIndex = -1;
     Object.defineProperty(item, 'getBoundingClientRect', {

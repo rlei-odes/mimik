@@ -10,6 +10,7 @@
  */
 const FRESH_MS = 60_000;
 const MAX_OVERLAY_RATIO = 0.8;
+const POSITIONED = new Set(['absolute', 'fixed']);
 
 export class TransientOverlays {
   private insertedAt = new WeakMap<Element, number>();
@@ -56,6 +57,9 @@ export class TransientOverlays {
       if (rect.width === 0 || rect.height === 0) continue;
       if (rect.width / window.innerWidth > MAX_OVERLAY_RATIO) continue;
       if (rect.height / window.innerHeight > MAX_OVERLAY_RATIO) continue;
+      // Being newly inserted is not enough: an app re-renders ordinary controls all
+      // the time. An overlay floats over the page, which means it left the flow.
+      if (!POSITIONED.has(getComputedStyle(cursor).position)) continue;
       overlay = cursor;
     }
     return overlay;
