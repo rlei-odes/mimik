@@ -1,5 +1,16 @@
 import { i18n } from '#imports';
+import { ICON_HINTS } from '@/core/capture/dom/icon-label';
 import type { ElementMeta } from '@/core/guides/types';
+
+/**
+ * "Speichern-Symbol" rather than "Schaltfläche": the control prints no text, so the
+ * only thing left to name it by is the picture on it. Guarded against an unknown key
+ * so a stale recording can never put a bare `icons.foo` in front of a reader.
+ */
+function iconTarget(icon: string | null | undefined): string | null {
+  if (!icon || !(ICON_HINTS as readonly string[]).includes(icon)) return null;
+  return i18n.t('steps.iconTarget', [i18n.t(`icons.${icon}` as 'icons.save')]);
+}
 
 export function buildFallbackDescription(action: string, meta: ElementMeta): string {
   const target =
@@ -8,6 +19,9 @@ export function buildFallbackDescription(action: string, meta: ElementMeta): str
     meta.placeholder ||
     meta.textContent?.slice(0, 80) ||
     meta.altText ||
+    // Before the tag: on an icon toolbar the tooltip is the only label there is.
+    meta.tooltip ||
+    iconTarget(meta.icon) ||
     meta.name ||
     meta.role ||
     meta.tag;

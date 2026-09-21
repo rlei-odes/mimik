@@ -480,6 +480,47 @@ steps:
   drag: "Drag $1"
   navigate: Navigate to page
   defaultAction: "$1 $2"
+  iconTarget: "the $1 icon"
+
+# Read off the picture when an icon-only control carries no text and no tooltip, so
+# that a toolbar step says more than "click the button". Keys come from ICON_HINTS.
+icons:
+  save: Save
+  new: New
+  open: Open
+  edit: Edit
+  delete: Delete
+  copy: Copy
+  paste: Paste
+  cut: Cut
+  print: Print
+  search: Search
+  refresh: Refresh
+  export: Export
+  import: Import
+  add: Add
+  remove: Remove
+  back: Back
+  forward: Forward
+  first: First
+  last: Last
+  up: Up
+  down: Down
+  close: Close
+  settings: Settings
+  help: Help
+  filter: Filter
+  sort: Sort
+  calendar: Calendar
+  attach: Attach
+  lock: Lock
+  user: User
+  mail: Mail
+  info: Info
+  undo: Undo
+  redo: Redo
+  check: Confirm
+  cancel: Cancel
 
 export:
   guideLabel: "GUIDE"

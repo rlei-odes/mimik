@@ -1,6 +1,7 @@
 import { getCssSelector } from 'css-selector-generator';
 import type { ElementMeta } from '@/core/guides/types';
-import { findFieldLabel } from './element-utils';
+import { findFieldLabel, SEMANTIC_SELECTOR } from './element-utils';
+import { findIconHint, findTooltipLabel } from './icon-label';
 
 function isFormControl(el: HTMLElement): boolean {
   return (
@@ -44,9 +45,15 @@ export function freezeRect(el: Element): FrozenRect {
   return { x, y, width, height };
 }
 
+/** A wrapper's tooltip names this control only while it wraps nothing else. */
+function isSoleControl(el: Element): boolean {
+  return el.querySelectorAll(SEMANTIC_SELECTOR).length <= 1;
+}
+
 export function extractElementMeta(el: HTMLElement, atEvent?: FrozenRect): ElementMeta {
   const live = freezeRect(el);
   const rect = live.width > 0 || live.height > 0 ? live : (atEvent ?? live);
+  const tooltip = findTooltipLabel(el, isSoleControl);
   let cssSelector: string;
   try {
     cssSelector = getCssSelector(el);
@@ -67,6 +74,8 @@ export function extractElementMeta(el: HTMLElement, atEvent?: FrozenRect): Eleme
     // Resolved here because the label is usually a separate element, and the
     // background only ever sees this object.
     fieldLabel: isFormControl(el) ? findFieldLabel(el) : null,
+    tooltip,
+    icon: tooltip ? null : findIconHint(el),
     dataTestId: el.getAttribute('data-testid') || el.getAttribute('data-test-id') || el.getAttribute('data-qa') || null,
     rect,
     devicePixelRatio: window.devicePixelRatio,

@@ -103,6 +103,14 @@ export interface ElementMeta {
   inputType: string | null;
   /** Readable name of a form control, resolved in the page where the label lives. */
   fieldLabel?: string | null;
+  /**
+   * The tooltip the application itself puts on this control. On an icon-only toolbar
+   * it is the only place the label exists, so it is resolved in the page — the
+   * background never sees the markup it was spread across.
+   */
+  tooltip?: string | null;
+  /** What the pictogram depicts, when the control carries neither text nor tooltip. */
+  icon?: string | null;
   dataTestId: string | null;
   rect: { x: number; y: number; width: number; height: number };
   devicePixelRatio: number;

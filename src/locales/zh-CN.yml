@@ -480,6 +480,47 @@ steps:
   drag: "拖动 $1"
   navigate: 导航到页面
   defaultAction: "$1 $2"
+  iconTarget: "$1 图标"
+
+# 当纯图标控件既无文字也无工具提示时，从图片读取，使工具栏步骤不止于"点击按钮"。
+# 键名来自 ICON_HINTS。
+icons:
+  save: 保存
+  new: 新建
+  open: 打开
+  edit: 编辑
+  delete: 删除
+  copy: 复制
+  paste: 粘贴
+  cut: 剪切
+  print: 打印
+  search: 搜索
+  refresh: 刷新
+  export: 导出
+  import: 导入
+  add: 添加
+  remove: 移除
+  back: 返回
+  forward: 前进
+  first: 第一条
+  last: 最后一条
+  up: 上移
+  down: 下移
+  close: 关闭
+  settings: 设置
+  help: 帮助
+  filter: 筛选
+  sort: 排序
+  calendar: 日历
+  attach: 附件
+  lock: 锁定
+  user: 用户
+  mail: 邮件
+  info: 信息
+  undo: 撤销
+  redo: 重做
+  check: 确认
+  cancel: 取消
 
 export:
   guideLabel: "指南"

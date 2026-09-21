@@ -480,6 +480,48 @@ steps:
   drag: "Arrastrar $1"
   navigate: Ir a la página
   defaultAction: "$1 $2"
+  iconTarget: "el icono $1"
+
+# Se lee de la imagen cuando un icono sin texto tampoco tiene información sobre
+# herramientas, para que un paso de barra de herramientas diga más que "haz clic en
+# el botón". Las claves vienen de ICON_HINTS.
+icons:
+  save: Guardar
+  new: Nuevo
+  open: Abrir
+  edit: Editar
+  delete: Eliminar
+  copy: Copiar
+  paste: Pegar
+  cut: Cortar
+  print: Imprimir
+  search: Buscar
+  refresh: Actualizar
+  export: Exportar
+  import: Importar
+  add: Añadir
+  remove: Quitar
+  back: Atrás
+  forward: Siguiente
+  first: Primero
+  last: Último
+  up: Subir
+  down: Bajar
+  close: Cerrar
+  settings: Ajustes
+  help: Ayuda
+  filter: Filtrar
+  sort: Ordenar
+  calendar: Calendario
+  attach: Adjuntar
+  lock: Bloquear
+  user: Usuario
+  mail: Correo
+  info: Información
+  undo: Deshacer
+  redo: Rehacer
+  check: Confirmar
+  cancel: Cancelar
 
 export:
   guideLabel: "GUÍA"

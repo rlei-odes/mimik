@@ -132,3 +132,28 @@ describe('buildFallbackDescription', () => {
     expect(result).toBe(`steps.click[${'A'.repeat(80)}]`);
   });
 });
+
+describe('buildFallbackDescription for icon-only toolbar buttons', () => {
+  it('names the button by its tooltip rather than its tag', () => {
+    const result = buildFallbackDescription('click', makeMeta({ tag: 'a', role: 'a', tooltip: 'Speichern' }));
+    expect(result).toBe('steps.click[Speichern]');
+  });
+
+  it('keeps the visible text ahead of a longer tooltip', () => {
+    const result = buildFallbackDescription(
+      'click',
+      makeMeta({ textContent: 'Speichern', tooltip: 'Datensatz speichern (Strg+S)' }),
+    );
+    expect(result).toBe('steps.click[Speichern]');
+  });
+
+  it('names the picture when the page names the button nowhere', () => {
+    const result = buildFallbackDescription('click', makeMeta({ tag: 'a', role: 'a', icon: 'save' }));
+    expect(result).toBe('steps.click[steps.iconTarget[icons.save]]');
+  });
+
+  it('ignores an icon key it does not know rather than printing it raw', () => {
+    const result = buildFallbackDescription('click', makeMeta({ tag: 'div', role: null, icon: 'sprocket' }));
+    expect(result).toBe('steps.click[div]');
+  });
+});

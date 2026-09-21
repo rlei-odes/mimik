@@ -480,6 +480,47 @@ steps:
   drag: "Glisser $1"
   navigate: "Aller à la page"
   defaultAction: "$1 $2"
+  iconTarget: "l'icône $1"
+
+# Lu sur l'image quand une icône seule n'a ni texte ni infobulle, pour qu'une étape
+# de barre d'outils dise plus que « cliquer sur le bouton ». Clés : ICON_HINTS.
+icons:
+  save: Enregistrer
+  new: Nouveau
+  open: Ouvrir
+  edit: Modifier
+  delete: Supprimer
+  copy: Copier
+  paste: Coller
+  cut: Couper
+  print: Imprimer
+  search: Rechercher
+  refresh: Actualiser
+  export: Exporter
+  import: Importer
+  add: Ajouter
+  remove: Retirer
+  back: Précédent
+  forward: Suivant
+  first: Premier
+  last: Dernier
+  up: Monter
+  down: Descendre
+  close: Fermer
+  settings: Paramètres
+  help: Aide
+  filter: Filtrer
+  sort: Trier
+  calendar: Calendrier
+  attach: "Pièce jointe"
+  lock: Verrouiller
+  user: Utilisateur
+  mail: "E-mail"
+  info: Informations
+  undo: Annuler
+  redo: Rétablir
+  check: Valider
+  cancel: Abandonner
 
 export:
   guideLabel: "GUIDE"

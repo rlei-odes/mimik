@@ -411,6 +411,47 @@ steps:
   drag: "$1 ziehen"
   navigate: Zur Seite navigieren
   defaultAction: "$1 $2"
+  iconTarget: "das Symbol $1"
+
+# Wird vom Bild abgelesen, wenn ein reines Symbol weder Text noch Tooltip hat, damit
+# ein Symbolleisten-Schritt mehr sagt als "Schaltfläche anklicken". Keys: ICON_HINTS.
+icons:
+  save: Speichern
+  new: Neu
+  open: Öffnen
+  edit: Bearbeiten
+  delete: Löschen
+  copy: Kopieren
+  paste: Einfügen
+  cut: Ausschneiden
+  print: Drucken
+  search: Suchen
+  refresh: Aktualisieren
+  export: Export
+  import: Import
+  add: Hinzufügen
+  remove: Entfernen
+  back: Zurück
+  forward: Weiter
+  first: Erster Eintrag
+  last: Letzter Eintrag
+  up: Aufwärts
+  down: Abwärts
+  close: Schließen
+  settings: Einstellungen
+  help: Hilfe
+  filter: Filter
+  sort: Sortieren
+  calendar: Kalender
+  attach: Anhang
+  lock: Sperren
+  user: Benutzer
+  mail: E-Mail
+  info: Info
+  undo: Rückgängig
+  redo: Wiederholen
+  check: Bestätigen
+  cancel: Abbrechen
 
 export:
   guideLabel: "ANLEITUNG"

@@ -480,6 +480,47 @@ steps:
   drag: "Arrastar $1"
   navigate: Ir pra página
   defaultAction: "$1 $2"
+  iconTarget: "o ícone $1"
+
+# Lido da imagem quando um ícone sem texto também não tem dica de ferramenta, pra que
+# um passo de barra de ferramentas diga mais que "clique no botão". Chaves: ICON_HINTS.
+icons:
+  save: Salvar
+  new: Novo
+  open: Abrir
+  edit: Editar
+  delete: Excluir
+  copy: Copiar
+  paste: Colar
+  cut: Recortar
+  print: Imprimir
+  search: Pesquisar
+  refresh: Atualizar
+  export: Exportar
+  import: Importar
+  add: Adicionar
+  remove: Remover
+  back: Voltar
+  forward: Avançar
+  first: Primeiro
+  last: Último
+  up: Subir
+  down: Descer
+  close: Fechar
+  settings: Configurações
+  help: Ajuda
+  filter: Filtrar
+  sort: Ordenar
+  calendar: Calendário
+  attach: Anexar
+  lock: Bloquear
+  user: Usuário
+  mail: "E-mail"
+  info: Informações
+  undo: Desfazer
+  redo: Refazer
+  check: Confirmar
+  cancel: Cancelar
 
 export:
   guideLabel: "GUIA"

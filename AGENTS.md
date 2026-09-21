@@ -32,7 +32,8 @@ src/
 │   │   ├── dom/              # DOM extraction utilities
 │   │   │   ├── context.ts       # DOMContext extraction + serialization
 │   │   │   ├── element-meta.ts  # extractElementMeta (selector, text, aria, rect)
-│   │   │   └── element-utils.ts # findFocusableAncestor, isTextField, etc.
+│   │   │   ├── element-utils.ts # findFocusableAncestor, isTextField, etc.
+│   │   │   └── icon-label.ts    # Names icon-only controls: tooltip, then what the icon depicts
 │   │   ├── events/           # Event capture system
 │   │   │   ├── handlers.ts      # CaptureController class + startCapture
 │   │   │   └── input-session.ts # InputSession (typing lifecycle)

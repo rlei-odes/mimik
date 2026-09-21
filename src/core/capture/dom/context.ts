@@ -1,4 +1,5 @@
-import { isRedactedField } from './element-utils';
+import { isRedactedField, SEMANTIC_SELECTOR } from './element-utils';
+import { findIconHint, findTooltipLabel, type IconHint } from './icon-label';
 
 export interface SiblingElement {
   tag: string;
@@ -12,7 +13,15 @@ export interface DOMContext {
   container: { tag: string; role: string | null; label: string | null } | null;
   heading: string | null;
   siblings: SiblingElement[];
-  target: { tag: string; role: string | null; name: string | null; value: string | null; action: string };
+  target: {
+    tag: string;
+    role: string | null;
+    name: string | null;
+    value: string | null;
+    action: string;
+    /** What the pictogram shows, when the control is an icon the page never names. */
+    icon?: IconHint | null;
+  };
 }
 
 const SEMANTIC_CONTAINERS = new Set([
@@ -101,6 +110,40 @@ function attr(el: Element, name: string): string | null {
   return el.getAttribute(name) || null;
 }
 
+/**
+ * Enterprise widget kits build every control out of bare divs and record the kind in
+ * the class list rather than in a role — `sc-button p-button btn_update`. Without
+ * this the reader is told to click "Bearbeiten" and never learns that Bearbeiten is
+ * a button. Matched in order, specific before general.
+ */
+const CLASS_ROLES: Array<[string, RegExp]> = [
+  ['checkbox', /\bcheckbox\b/],
+  ['radio', /\bradio(button)?\b/],
+  ['menuitem', /\bmenuitem\b/],
+  ['combobox', /\b(combobox|dropdown)\b/],
+  ['tab', /\btab\b/],
+  ['button', /\b(button|btn)\b/],
+];
+
+/**
+ * Words that mark the box those controls sit in rather than a control. A toolbar is
+ * routinely classed `button-bar`, and calling it a button would name the whole strip.
+ */
+const CONTAINER_WORDS = /\b(group|bar|toolbar|container|panel|frame|wrapper|list|row|grid|menu|nav)\b/;
+
+function roleFromClass(el: Element): string | null {
+  const words = attr(el, 'class')
+    ?.replace(/[^a-z0-9]+/gi, ' ')
+    .toLowerCase();
+  if (!words || CONTAINER_WORDS.test(words)) return null;
+  return CLASS_ROLES.find(([, pattern]) => pattern.test(words))?.[0] ?? null;
+}
+
+/** The role the page declares, or the one its class list gives away. */
+function roleOf(el: Element): string | null {
+  return attr(el, 'role') ?? roleFromClass(el);
+}
+
 function resolveAriaLabelledBy(el: Element): string | null {
   const ids = attr(el, 'aria-labelledby');
   if (!ids) return null;
@@ -126,6 +169,14 @@ function getLabelForInput(el: Element): string | null {
   return textOf(clone);
 }
 
+/**
+ * A tooltip may only be borrowed from a wrapper that holds this control alone —
+ * a toolbar's own title would otherwise be pinned onto each button inside it.
+ */
+function isSoleControl(el: Element): boolean {
+  return el.querySelectorAll(SEMANTIC_SELECTOR).length <= 1;
+}
+
 function getAccessibleName(el: Element): string | null {
   return (
     attr(el, 'aria-label') ??
@@ -134,7 +185,9 @@ function getAccessibleName(el: Element): string | null {
       ? getLabelForInput(el)
       : null) ??
     ((el.textContent?.trim()?.length ?? 0) <= 80 ? el.textContent?.trim() || null : null) ??
-    attr(el, 'title') ??
+    // Icon buttons have no text of their own, and the tooltip is where such a toolbar
+    // keeps its labels — on the button, on the image inside it, or on the cell around it.
+    findTooltipLabel(el, isSoleControl) ??
     attr(el, 'placeholder')
   );
 }
@@ -201,7 +254,7 @@ function collectSiblings(el: Element, container: Element | null): SiblingElement
     if (sib.closest('[data-mimik-ignore]')) continue;
     result.push({
       tag: sib.tagName.toLowerCase(),
-      role: attr(sib, 'role'),
+      role: roleOf(sib),
       name: getAccessibleName(sib),
       value: getElementValue(sib),
     });
@@ -214,6 +267,7 @@ export function extractDOMContext(el: HTMLElement, action: string): DOMContext {
   const containerEl = container
     ? el.closest(`${container.tag}${container.role ? `[role="${container.role}"]` : ''}`)
     : null;
+  const name = getAccessibleName(el);
 
   return {
     page: { title: document.title, path: location.pathname },
@@ -222,10 +276,12 @@ export function extractDOMContext(el: HTMLElement, action: string): DOMContext {
     siblings: collectSiblings(el, containerEl),
     target: {
       tag: el.tagName.toLowerCase(),
-      role: attr(el, 'role'),
-      name: getAccessibleName(el),
+      role: roleOf(el),
+      name,
       value: getElementValue(el),
       action,
+      // Only worth reading the picture when the page gave the control no name at all.
+      icon: name ? null : findIconHint(el),
     },
   };
 }
@@ -250,8 +306,12 @@ export function serializeDOMContext(ctx: DOMContext): string {
     );
   }
 
-  const { tag, role, name, value, action } = ctx.target;
+  const { tag, role, name, value, action, icon } = ctx.target;
   lines.push(`→ Target: ${describeControl(tag, role, name)}${value ? ` [${value}]` : ''} (${action})`);
+  // Deliberately on its own line and unquoted: everything quoted above is text the
+  // page prints, and this is not — it is what the pictogram shows, read off the icon
+  // file. Quoting it would invite the model to reproduce it as a printed label.
+  if (!name && icon) lines.push(`Icon shown on it: ${icon} (no printed label)`);
 
   return lines.join('\n');
 }

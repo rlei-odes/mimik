@@ -10,6 +10,7 @@ Rules:
 - Reproduce interface labels exactly as written, keeping their original language, capitalisation and punctuation. Translate the sentence around a label, never the label itself.
 - Labels in business software are often product-specific terms. Treat a quoted label as a literal string printed on screen, never as a word to interpret, expand or correct.
 - When no name is given for the control, describe what it does rather than inventing a label.
+- An "Icon shown on it" line names the picture on a control that prints no text. Say what that control does, in the reader's language and in the reader's words — "the save button", "the button with the diskette". Never quote that word or present it as a label, and never leave the action as a bare "click the button" when the line is there.
 - The reader can see the screenshot, so do not describe the layout, colours or position of anything.
 
 Examples of good captions:
@@ -29,6 +30,7 @@ const STEP_EXAMPLES: Record<string, string[]> = {
     "Select 'Admin' from the Role dropdown",
     'Choose Movements from the File menu',
     'Open the Settings page',
+    'Click the save icon in the toolbar',
   ],
   de: [
     'Klicken Sie auf die Schaltfläche Senden',
@@ -36,6 +38,7 @@ const STEP_EXAMPLES: Record<string, string[]> = {
     'Wählen Sie in der Auswahlliste Rolle den Eintrag Admin aus',
     'Wählen Sie im Menü Datei den Eintrag Bewegungen',
     'Öffnen Sie die Seite Einstellungen',
+    'Klicken Sie in der Symbolleiste auf das Speichern-Symbol',
   ],
 };
 
