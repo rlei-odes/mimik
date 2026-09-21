@@ -18,6 +18,7 @@ import {
 import { TransientOverlays } from '../dom/transient';
 import { isReplayedClick, replayClick, replayInit, shouldInterceptClick } from './click-intercept';
 import { InputSession } from './input-session';
+import { commandChord } from './key-chord';
 
 const DEDUP_MS = 300;
 const DRAG_MIN_PX = 30;
@@ -324,7 +325,17 @@ class CaptureController {
       return;
     }
 
-    if (isSensitiveField(target) || isTextField(target)) return;
+    if (isSensitiveField(target)) return;
+
+    if (isTextField(target)) {
+      // Not a step of its own: the field was already captured when it was clicked, and
+      // that picture still shows it. Whatever the chord opens is usually covering the
+      // field by the time the session ends.
+      const chord = commandChord(ke);
+      if (chord) this.input.noteShortcut(chord, target);
+      return;
+    }
+
     this.enqueue(this.capture(`keydown:${ke.key}`, target));
   }
 
@@ -357,6 +368,7 @@ class CaptureController {
     } else {
       this.input.update(target);
     }
+    this.input.markTyped();
   }
 
   private onFocusOut(e: Event) {

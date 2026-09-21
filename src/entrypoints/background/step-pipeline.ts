@@ -128,7 +128,24 @@ export async function handleFinalizeInputStep(
   stepId: string,
   elementMeta: ElementMeta,
   domContext: DOMContext | undefined,
+  shortcut?: string,
 ) {
+  // A shortcut is not typing, so there is no entered text for a fresh picture to
+  // show. Worse, the chord has usually opened something over the field by now, and
+  // re-shooting would replace a screenshot of the field with one that no longer
+  // contains it while the step still points at where the field used to be.
+  if (shortcut) {
+    // Nothing for a model to add: the sentence is the field's name and the chord, both
+    // known exactly here. Asking anyway would spend a call on a step whose two facts
+    // are already in hand, and risk the chord coming back reworded.
+    await db.steps.update(stepId, {
+      elementMeta,
+      description: buildFallbackDescription(`shortcut:${shortcut}`, elementMeta),
+      descriptionSource: 'heuristic',
+    });
+    return;
+  }
+
   const screenshotId = await takeScreenshot(stepId, elementMeta);
   const updates: Partial<Step> = { elementMeta };
   if (screenshotId) updates.screenshotId = screenshotId;

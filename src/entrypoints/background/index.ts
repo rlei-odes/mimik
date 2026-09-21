@@ -206,7 +206,7 @@ export default defineBackground(() => {
 
   onMessage('finalizeInputStep', async ({ data }) => {
     await waitUntilReady();
-    await handleFinalizeInputStep(data.stepId, data.elementMeta, data.domContext);
+    await handleFinalizeInputStep(data.stepId, data.elementMeta, data.domContext, data.shortcut);
     return { updated: true };
   });
 

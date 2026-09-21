@@ -481,6 +481,7 @@ steps:
   navigate: Ir pra página
   defaultAction: "$1 $2"
   iconTarget: "o ícone $1"
+  shortcutInField: "Clique em $1 e pressione $2"
 
 # Lido da imagem quando um ícone sem texto também não tem dica de ferramenta, pra que
 # um passo de barra de ferramentas diga mais que "clique no botão". Chaves: ICON_HINTS.

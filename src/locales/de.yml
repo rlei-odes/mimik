@@ -412,6 +412,7 @@ steps:
   navigate: Zur Seite navigieren
   defaultAction: "$1 $2"
   iconTarget: "das Symbol $1"
+  shortcutInField: "Klicken Sie in $1 und drücken Sie $2"
 
 # Wird vom Bild abgelesen, wenn ein reines Symbol weder Text noch Tooltip hat, damit
 # ein Symbolleisten-Schritt mehr sagt als "Schaltfläche anklicken". Keys: ICON_HINTS.

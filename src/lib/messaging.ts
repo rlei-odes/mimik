@@ -67,6 +67,8 @@ export interface FinalizeInputStepData {
   stepId: string;
   elementMeta: ElementMeta;
   domContext?: DOMContext;
+  /** A command chord pressed in the field instead of typing, e.g. `Ctrl+A`. */
+  shortcut?: string;
 }
 
 export interface FinalizeInputStepResponse {

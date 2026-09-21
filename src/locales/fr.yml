@@ -481,6 +481,7 @@ steps:
   navigate: "Aller à la page"
   defaultAction: "$1 $2"
   iconTarget: "l'icône $1"
+  shortcutInField: "Cliquez dans $1, puis appuyez sur $2"
 
 # Lu sur l'image quand une icône seule n'a ni texte ni infobulle, pour qu'une étape
 # de barre d'outils dise plus que « cliquer sur le bouton ». Clés : ICON_HINTS.

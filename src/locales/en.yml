@@ -481,6 +481,7 @@ steps:
   navigate: Navigate to page
   defaultAction: "$1 $2"
   iconTarget: "the $1 icon"
+  shortcutInField: "Click $1, then press $2"
 
 # Read off the picture when an icon-only control carries no text and no tooltip, so
 # that a toolbar step says more than "click the button". Keys come from ICON_HINTS.

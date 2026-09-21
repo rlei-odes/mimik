@@ -31,6 +31,12 @@ export function buildFallbackDescription(action: string, meta: ElementMeta): str
     return i18n.t('steps.pressKey', [key, target]);
   }
 
+  // One sentence rather than two steps: the field and the chord are a single move,
+  // and splitting them would leave a screenshot of whatever the chord opened.
+  if (action.startsWith('shortcut:')) {
+    return i18n.t('steps.shortcutInField', [target, action.slice('shortcut:'.length)]);
+  }
+
   switch (action) {
     case 'click':
     case 'auxclick':

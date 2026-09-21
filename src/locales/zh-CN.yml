@@ -481,6 +481,7 @@ steps:
   navigate: 导航到页面
   defaultAction: "$1 $2"
   iconTarget: "$1 图标"
+  shortcutInField: "点击 $1，然后按 $2"
 
 # 当纯图标控件既无文字也无工具提示时，从图片读取，使工具栏步骤不止于"点击按钮"。
 # 键名来自 ICON_HINTS。
