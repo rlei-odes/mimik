@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AI_LANGUAGES, buildStepPrompt, GUIDE_META_PROMPT, getLanguageSuffix, getStepExamples } from '../prompts';
+import {
+  AI_LANGUAGES,
+  applicationNotes,
+  buildStepPrompt,
+  GUIDE_META_PROMPT,
+  getLanguageSuffix,
+  getStepExamples,
+} from '../prompts';
 
 describe('step caption examples', () => {
   it('gives German examples when the guide language is German', () => {
@@ -64,6 +71,37 @@ describe('GUIDE_META_PROMPT', () => {
   it('asks for a description of one or two sentences', () => {
     expect(GUIDE_META_PROMPT.toLowerCase()).toContain('description');
     expect(GUIDE_META_PROMPT).toMatch(/one or two sentences/i);
+  });
+});
+
+describe('applicationNotes', () => {
+  const PROALPHA = 'https://pa95-app.microdul.com:13063/skin-client/';
+
+  it('names Proalpha rather than leaving the model to read the path', () => {
+    const notes = applicationNotes([PROALPHA]);
+
+    expect(notes).toContain('Proalpha');
+    expect(notes).toContain('must not appear in the title');
+  });
+
+  it('recognises the application whatever follows the path', () => {
+    expect(applicationNotes(['https://pa95-app.microdul.com:13063/skin-client'])).toContain('Proalpha');
+    expect(applicationNotes(['https://host/skin-client/?sid=42'])).toContain('Proalpha');
+    expect(applicationNotes(['https://host/SKIN-CLIENT/start'])).toContain('Proalpha');
+  });
+
+  it('adds the note once however many steps ran in that application', () => {
+    const notes = applicationNotes([PROALPHA, PROALPHA, PROALPHA]);
+
+    expect(notes.split('\n').filter((line) => line.startsWith('- '))).toHaveLength(1);
+  });
+
+  it('stays out of the prompt for a guide recorded somewhere else', () => {
+    expect(applicationNotes(['https://github.com/anthropics', 'https://mail.google.com/'])).toBe('');
+  });
+
+  it('is not fooled by the words appearing elsewhere in a url', () => {
+    expect(applicationNotes(['https://example.com/skin-clients-overview'])).toBe('');
   });
 });
 

@@ -74,6 +74,28 @@ Examples of good descriptions:
 - "Reset a locked-out user's password from the Okta admin panel. For IT support staff."
 - "Configure which Slack channels send desktop notifications, and set a do-not-disturb schedule."`;
 
+/**
+ * Applications whose URL names nothing a reader would recognise. The prompt asks the
+ * model to name the application, and left to itself it reads the name off the path —
+ * every Proalpha guide came back titled "… Skin Client", which is the front end's
+ * internal name and means nothing to the person following the guide.
+ *
+ * Only entries whose pages actually appear in the guide reach the prompt, so the
+ * model is never told about an application the recording never visited.
+ */
+export const KNOWN_APPS: { match: RegExp; note: string }[] = [
+  {
+    match: /\/skin-client(\/|$|\?)/i,
+    note: 'Pages under /skin-client/ are the Proalpha ERP system. Call the application Proalpha. "Skin Client" is the internal name of its web front end and must not appear in the title or the description.',
+  },
+];
+
+/** The notes for the applications these step URLs belong to, or an empty string. */
+export function applicationNotes(urls: readonly string[]): string {
+  const notes = KNOWN_APPS.filter(({ match }) => urls.some((url) => match.test(url))).map(({ note }) => `- ${note}`);
+  return notes.length === 0 ? '' : `\n\nAbout the applications these steps run in:\n${notes.join('\n')}`;
+}
+
 export const GUIDE_META_JSON_SUFFIX = `
 
 Reply with nothing but a JSON object shaped {"title": string, "description": string}. No code fence, no commentary.`;
