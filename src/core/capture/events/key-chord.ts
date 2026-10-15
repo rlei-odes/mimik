@@ -15,12 +15,20 @@ const CLIPBOARD_KEYS = new Set(['c', 'x', 'v']);
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock', 'OS']);
 
 /**
+ * Ctrl, Shift and the like fire a keydown of their own before the key they modify,
+ * and keep firing it while held. Pressed alone they do nothing worth a step.
+ */
+export function isModifierKey(key: string): boolean {
+  return MODIFIER_KEYS.has(key);
+}
+
+/**
  * How the chord is written in the step, or null when the keystroke is ordinary
  * typing. `AltGraph` is excluded on purpose: on a German keyboard it is how @ and \
  * are typed, and the browser reports those as Ctrl+Alt.
  */
 export function commandChord(e: KeyboardEvent): string | null {
-  if (MODIFIER_KEYS.has(e.key)) return null;
+  if (isModifierKey(e.key)) return null;
   // Windows reports AltGr as Ctrl+Alt, so both have to be set before the AltGraph
   // state means anything — Alt+F4 alone is a real shortcut.
   if (e.ctrlKey && e.altKey && e.getModifierState?.('AltGraph')) return null;

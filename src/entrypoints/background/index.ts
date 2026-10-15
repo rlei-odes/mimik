@@ -1,4 +1,5 @@
 import { browser, defineBackground } from '#imports';
+import { seedForkDefaults } from '@/core/capture/ai/fork-defaults';
 import { rewriteSelection } from '@/core/capture/ai/rewrite';
 import { validateApiKey } from '@/core/capture/ai/validate';
 import { stepRequiresManual } from '@/core/guideme/manual';
@@ -58,6 +59,8 @@ export default defineBackground(() => {
 
   browser.runtime.onInstalled.addListener(async (details) => {
     await recordUpdate(details.reason);
+    // Before the onboarding tab opens, so it shows the shipped endpoint already filled in.
+    await seedForkDefaults();
     if (details.reason !== 'install') return;
     if (import.meta.env.BROWSER === 'firefox') {
       // Firefox MV3 bug 1758306: the <all_urls> grant lands in the origin

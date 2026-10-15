@@ -148,16 +148,64 @@ describe('a command chord pressed in a field instead of typing', () => {
   });
 
   it('still records a chord pressed outside a field as its own step', async () => {
-    const el = document.createElement('div');
-    el.tabIndex = 0;
-    Object.defineProperty(el, 'getBoundingClientRect', {
-      value: () => ({ x: 0, y: 0, top: 0, left: 0, right: 40, bottom: 40, width: 40, height: 40 }),
-    });
-    document.body.appendChild(el);
+    const el = focusable();
 
     keydown(el, 'a', { ctrlKey: true });
     await settle();
 
-    expect(calls('captureStep')[0][1]).toMatchObject({ action: 'keydown:a' });
+    expect(calls('captureStep')[0][1]).toMatchObject({ action: 'keydown:Ctrl+A' });
+  });
+});
+
+function focusable(): HTMLDivElement {
+  const el = document.createElement('div');
+  el.tabIndex = 0;
+  Object.defineProperty(el, 'getBoundingClientRect', {
+    value: () => ({ x: 0, y: 0, top: 0, left: 0, right: 40, bottom: 40, width: 40, height: 40 }),
+  });
+  document.body.appendChild(el);
+  return el;
+}
+
+describe('a keystroke outside a field', () => {
+  it('records Ctrl+F as one step naming the whole chord, not the Ctrl press before it', async () => {
+    const el = focusable();
+
+    keydown(el, 'Control', { ctrlKey: true });
+    keydown(el, 'f', { ctrlKey: true });
+    await settle();
+
+    expect(calls('captureStep')).toHaveLength(1);
+    expect(calls('captureStep')[0][1]).toMatchObject({ action: 'keydown:Ctrl+F' });
+  });
+
+  it('records nothing while Ctrl is held on its own', async () => {
+    const el = focusable();
+
+    keydown(el, 'Control', { ctrlKey: true });
+    for (let i = 0; i < 30; i++) keydown(el, 'Control', { ctrlKey: true, repeat: true });
+    await settle();
+
+    expect(calls('captureStep')).toHaveLength(0);
+  });
+
+  it('records a held key once', async () => {
+    const el = focusable();
+
+    keydown(el, 'ArrowDown');
+    for (let i = 0; i < 30; i++) keydown(el, 'ArrowDown', { repeat: true });
+    await settle();
+
+    expect(calls('captureStep')).toHaveLength(1);
+    expect(calls('captureStep')[0][1]).toMatchObject({ action: 'keydown:ArrowDown' });
+  });
+
+  it('leaves copy to the clipboard event', async () => {
+    const el = focusable();
+
+    keydown(el, 'c', { ctrlKey: true });
+    await settle();
+
+    expect(calls('captureStep')).toHaveLength(0);
   });
 });

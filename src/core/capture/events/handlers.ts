@@ -18,7 +18,7 @@ import {
 import { TransientOverlays } from '../dom/transient';
 import { isReplayedClick, replayClick, replayInit, shouldInterceptClick } from './click-intercept';
 import { InputSession } from './input-session';
-import { commandChord } from './key-chord';
+import { commandChord, isModifierKey } from './key-chord';
 
 const DEDUP_MS = 300;
 const DRAG_MIN_PX = 30;
@@ -319,6 +319,8 @@ class CaptureController {
     const resolved = eventTarget(ke);
     const target = resolved instanceof HTMLElement ? resolved : document.activeElement;
     if (!target || !(target instanceof HTMLElement) || isMimikElement(target)) return;
+    // A held key repeats its keydown many times a second; the first one is the step.
+    if (ke.repeat || isModifierKey(ke.key)) return;
 
     if (this.input.active && (ke.key === 'Enter' || ke.key === 'Escape')) {
       this.enqueue(() => this.input.finalize());
@@ -327,16 +329,20 @@ class CaptureController {
 
     if (isSensitiveField(target)) return;
 
+    const chord = commandChord(ke);
     if (isTextField(target)) {
       // Not a step of its own: the field was already captured when it was clicked, and
       // that picture still shows it. Whatever the chord opens is usually covering the
       // field by the time the session ends.
-      const chord = commandChord(ke);
       if (chord) this.input.noteShortcut(chord, target);
       return;
     }
 
-    this.enqueue(this.capture(`keydown:${ke.key}`, target));
+    // Ctrl or Cmd without a chord is cut, copy or paste, which the clipboard events
+    // record, or AltGr typing a character.
+    if (!chord && (ke.ctrlKey || ke.metaKey)) return;
+
+    this.enqueue(this.capture(`keydown:${chord ?? ke.key}`, target));
   }
 
   private onInput(e: Event) {
