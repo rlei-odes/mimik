@@ -130,6 +130,28 @@ describe('click interception', () => {
     expect(vi.mocked(sendMessage).mock.calls.filter((c) => c[0] === 'captureStep')).toHaveLength(1);
   });
 
+  it('replays a grid header click through the label that sorts the column', async () => {
+    // ag-grid's shape: the sort listener sits on the label, inside the columnheader
+    // that the step resolves to.
+    const header = place('div');
+    header.setAttribute('role', 'columnheader');
+    header.innerHTML = '<div class="label"><span>Name</span></div>';
+    const label = header.querySelector('.label') as HTMLElement;
+    let sorted = 0;
+    label.addEventListener('click', () => {
+      sorted += 1;
+    });
+
+    userClick(header.querySelector('span') as HTMLElement);
+    await settle();
+    expect(sorted).toBe(0);
+
+    for (const d of pending) d.resolve();
+    await settle();
+
+    expect(sorted).toBe(1);
+  });
+
   it('lets a shift-click through untouched and records nothing', async () => {
     const button = place('button');
     let seen = 0;

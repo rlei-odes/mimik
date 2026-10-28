@@ -78,13 +78,33 @@ describe('replayInit', () => {
     document.addEventListener('click', (e) => seen.push({ trusted: e.isTrusted, x: (e as MouseEvent).clientX }), {
       once: true,
     });
-    replayClick(button, replayInit(click({ clientX: 77 })));
+    replayClick(button, button, replayInit(click({ clientX: 77 })));
     expect(seen).toEqual([{ trusted: false, x: 77 }]);
   });
 
   it('focuses the target first, the way a real click would', () => {
     const button = el('<button>Copy link</button>');
-    replayClick(button, replayInit(click()));
+    replayClick(button, button, replayInit(click()));
     expect(document.activeElement).toBe(button);
+  });
+
+  it('dispatches where the user clicked, so listeners between there and the target still fire', () => {
+    const header = el('<div role="columnheader"><div class="label"><span>Name</span></div></div>');
+    const label = header.querySelector('.label') as HTMLElement;
+    const text = header.querySelector('span') as HTMLElement;
+    const seen: EventTarget[] = [];
+    label.addEventListener('click', (e) => seen.push(e.target as EventTarget));
+    replayClick(header, text, replayInit(click()));
+    expect(seen).toEqual([text]);
+  });
+
+  it('falls back to the target when the clicked element has left the DOM', () => {
+    const header = el('<div role="columnheader"><span>Name</span></div>');
+    const text = header.querySelector('span') as HTMLElement;
+    text.remove();
+    const seen: EventTarget[] = [];
+    header.addEventListener('click', (e) => seen.push(e.target as EventTarget));
+    replayClick(header, text, replayInit(click()));
+    expect(seen).toEqual([header]);
   });
 });

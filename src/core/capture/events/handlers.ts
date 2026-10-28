@@ -301,7 +301,7 @@ class CaptureController {
       } catch (err) {
         logger.warn('Capture failed, replaying the click anyway', err);
       } finally {
-        replayClick(target, init);
+        replayClick(target, raw, init);
       }
     });
   }

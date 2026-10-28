@@ -35,9 +35,15 @@ export function replayInit(event: MouseEvent): PointerEventInit {
   };
 }
 
-export function replayClick(target: HTMLElement, init: PointerEventInit): void {
+/**
+ * `target` is the control the step describes; `origin` is the element the user
+ * actually clicked inside it. The click is dispatched at `origin` so it bubbles
+ * through the same nodes the real one would have: a grid header listens on its
+ * label, which a click dispatched at the header itself never passes through.
+ */
+export function replayClick(target: HTMLElement, origin: Element, init: PointerEventInit): void {
   if (target.isConnected && target.tabIndex >= 0) target.focus();
   const event = new PointerEvent('click', init);
   replayed.add(event);
-  target.dispatchEvent(event);
+  (origin.isConnected ? origin : target).dispatchEvent(event);
 }
